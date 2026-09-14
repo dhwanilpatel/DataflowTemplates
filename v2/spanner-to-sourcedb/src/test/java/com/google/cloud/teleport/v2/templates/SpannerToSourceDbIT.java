@@ -119,6 +119,9 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
         String truststoreGcsUrl = getGcsPath("input/truststore_Shard1.jks", gcsResourceManager);
 
         String truststoreLocalUrl = "file:///extra_files/truststore_Shard1.jks";
+        if (System.getProperty("directRunnerTest") != null) {
+          truststoreLocalUrl = "file://" + jdbcResourceManager.getTruststorePath();
+        }
 
         String props =
             String.format(
@@ -149,13 +152,11 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
                 getGcsPath("dlq", gcsResourceManager)
                     .replace("gs://" + gcsResourceManager.getBucket(), ""),
                 gcsResourceManager);
-        Map<String, String> jobParameters =
-            new HashMap<>() {
-              {
-                put("sessionFilePath", getGcsPath("input/session.json", gcsResourceManager));
-                put("extraFilesToStage", truststoreGcsUrl);
-              }
-            };
+        Map<String, String> jobParameters = new HashMap<>();
+        jobParameters.put("sessionFilePath", getGcsPath("input/session.json", gcsResourceManager));
+        if (System.getProperty("directRunnerTest") == null) {
+          jobParameters.put("extraFilesToStage", truststoreGcsUrl);
+        }
         jobInfo =
             launchDataflowJob(
                 gcsResourceManager,
